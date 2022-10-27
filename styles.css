@@ -1,0 +1,94 @@
+body {
+    background-color: grey;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+li {
+    list-style-type: none;
+}
+
+ul, 
+p, 
+h1,
+input {
+    margin: 0;
+    padding: 0;
+}
+
+.counterList {
+    display: flex;
+}
+
+.counterItem {
+    border-radius: 5%;
+    padding: 10px;
+    background-color: #efefef;
+}
+
+.counterItem:not(:last-child) {
+    margin-right: 30px;
+}
+
+.title {
+    margin: 20px 0;
+}
+
+.addTaskInput {
+    width: 530px;
+    margin-bottom: 20px;
+}
+
+.filterInput {
+    width: 290px;
+}
+
+.counterList {
+    margin: 20px 0;
+}
+
+.todoItem {
+    display: flex;
+}
+
+.todoItem:not(:last-child) {
+    margin-bottom: 20px;
+}
+
+.todoItemText {
+    width: 400px;
+    margin: 0 20px;
+}
+
+.counterList,
+.completeItemButton,
+button {
+    cursor: pointer;
+    border: none;
+    border-radius: 5%;
+}
+
+.removeItemButton {
+    margin-right: 5px;
+}
+
+.isHidden {
+    display: none;
+}
+
+.isActive {
+    color: #0075ff;
+}
+
+.isEditable {
+    background-color: #efefef;
+}
+
+button:hover,
+.counterItem:hover {
+    background-color: black;
+    color:#efefef;
+    border: none;
+    transition: 0.7s;
+}
