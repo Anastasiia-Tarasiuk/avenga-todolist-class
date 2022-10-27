@@ -21,12 +21,47 @@ export class TodoItem {
         this.emptyTodoListEl = document.querySelector('.emptyTodoListContent');
         this.emptyAllTodoEl = document.querySelector('.emptyAllTodosContent');
 
+        this.counterListEl = document.querySelector('.counterList');
+        this.counterListEl.addEventListener('click', this.onListClick);
+
+        document.addEventListener('DOMContentLoaded', this.onPageReload.bind(this));
+
         this.todoItemArray = todoItemArray;
         this.editableTextContent = null;
         
-        this.renderTodoItem(this.dataIndex, this.text, this.incompletedTodoListEl);
-        this.renderTodoItem(this.dataIndex, this.text, this.allTodoListEl);
+        // this.renderTodoItem(this.dataIndex, this.text, this.incompletedTodoListEl);
+        // this.renderTodoItem(this.dataIndex, this.text, this.allTodoListEl);
 
+        this.renderEmptyTodoListContent(true); 
+
+        if (this.todoItemArray.length === 0) {
+            this.completedTodosCounterEl.textContent = 0;
+            this.incompletedTodosCounterEl.textContent = 0;
+            this.allTodosCounterEl.textContent = 0;
+        }
+
+
+        if (this.todoItemArray.length > 0) {    
+            for (let i = 0; i < this.todoItemArray.length; i++) {
+                // array items renders to allTodoList
+                this.renderTodoItem(this.todoItemArray[i].id, this.todoItemArray[i].item, this.allTodoListEl);
+                // according to isDone status renders to completedTodoList or incompletedTodoList
+                if (this.todoItemArray[i].isDone) {
+                    this.renderTodoItem(this.todoItemArray[i].id, this.todoItemArray[i].item, this.completedTodoListEl);
+                    
+                    const checkboxEl = this.completedTodoListEl.querySelector('.completeItemButton');
+                    checkboxEl.checked = true;
+                    this.allTodoListEl.querySelector('.completeItemButton').checked = true;
+                } else {
+                    this.renderTodoItem(this.todoItemArray[i].id, this.todoItemArray[i].item, this.incompletedTodoListEl);
+                    
+                    const checkboxEl = this.incompletedTodoListEl.querySelector('.completeItemButton');
+                    checkboxEl.checked = false;
+                    this.allTodoListEl.querySelector('.completeItemButton').checked = false;
+                } 
+            }
+           this. updateTodoCounter();
+        }
     }
 
 
@@ -39,13 +74,13 @@ export class TodoItem {
         const todoItemEl = list.querySelector('.todoItem');
         todoItemEl.setAttribute('data-index', dataIndex);
 
-        const completeItemButtonEl = document.querySelector('.completeItemButton');
+        const completeItemButtonEl = list.querySelector('.completeItemButton');
         completeItemButtonEl.addEventListener('click', this.onCheckBoxClick.bind(this));
 
-        const removeItemButtonEl = document.querySelector('.removeItemButton');
+        const removeItemButtonEl = list.querySelector('.removeItemButton');
         removeItemButtonEl.addEventListener('click', this.onRemoveBtnClick.bind(this));
 
-        const editItemButtonEl = document.querySelector('.editItemButton');
+        const editItemButtonEl = list.querySelector('.editItemButton');
         editItemButtonEl.addEventListener('click', this.onEditBtnClick.bind(this));
 
         this.updateTodoCounter();
@@ -225,15 +260,92 @@ export class TodoItem {
     }
 
     renderAllTodosContent() {
-    // renders message for all todos list if it is active
-    if (this.todoItemArray.length === 0) {
-        this.emptyAllTodoEl.textContent = 'Todos list is empty';
+        // renders message for all todos list if it is active
+        if (this.todoItemArray.length === 0) {
+            this.emptyAllTodoEl.textContent = 'Todos list is empty';
+        }
+        if (this.todoItemArray.length > 0) {
+            this.emptyAllTodoEl.textContent = '';
+        }
     }
-    if (this.todoItemArray.length > 0) {
-        this.emptyAllTodoEl.textContent = '';
-    }
-}
 
+    onPageReload() {
+        const activePage = sessionStorage.getItem("isActive");
+        switch (activePage) {
+            case 'completed':
+                this.makeCompletedTodoListActive();
+                break;
+            case 'incompleted':
+                this.makeIncompletedTodoListActive();
+                break;
+            case 'all':
+                this.makeAllTodoListActive();
+                break;
+            default:
+                this.completedTodoListEl.classList.add('isHidden');
+                this.allTodoListEl.classList.add('isHidden');
+                this.incompletedTodosCounterEl.parentElement.classList.add('isActive');
+        }
+    }
+    
+    onListClick(e) {
+        console.log(e.target)
+        // makes one todos list active
+        switch (e.target.getAttribute('data-type')) {
+            case 'completed':
+                this.makeCompletedTodoListActive();
+                sessionStorage.setItem("isActive", 'completed');
+                break;
+            case 'incompleted':
+                this.makeIncompletedTodoListActive();
+                sessionStorage.setItem("isActive", 'incompleted');
+                break;
+            case 'all':            
+                this.makeAllTodoListActive()
+                sessionStorage.setItem("isActive", 'all');
+                break;
+        }
+    }
+
+
+    makeIncompletedTodoListActive() {
+        this.incompletedTodoListEl.classList.remove('isHidden');
+        this.completedTodoListEl.classList.add('isHidden');
+        this.incompletedTodosCounterEl.parentElement.classList.add('isActive');
+        this.completedTodosCounterEl.parentElement.classList.remove('isActive');
+        this.allTodoListEl.classList.add('isHidden');
+        this.allTodosCounterEl.parentElement.classList.remove('isActive');
+        this.emptyTodoListEl.classList.remove('isHidden');
+        this.emptyAllTodoEl.classList.add('isHidden');
+
+        this.renderEmptyTodoListContent(true);
+    }
+
+    makeAllTodoListActive() {
+        this.allTodoListEl.classList.remove('isHidden');
+        this.allTodosCounterEl.parentElement.classList.add('isActive');
+        this.incompletedTodoListEl.classList.add('isHidden');
+        this.completedTodoListEl.classList.add('isHidden');
+        this.completedTodosCounterEl.parentElement.classList.remove('isActive');
+        this.incompletedTodosCounterEl.parentElement.classList.remove('isActive');
+        this.emptyAllTodoEl.classList.remove('isHidden');
+        this.emptyTodoListEl.classList.add('isHidden');
+
+        this.renderAllTodosContent();
+    }
+
+    makeCompletedTodoListActive() {
+        this.completedTodoListEl.classList.remove('isHidden');
+        this.incompletedTodoListEl.classList.add('isHidden');
+        this.completedTodosCounterEl.parentElement.classList.add('isActive');
+        this.incompletedTodosCounterEl.parentElement.classList.remove('isActive');
+        this.allTodoListEl.classList.add('isHidden');
+        this.allTodosCounterEl.parentElement.classList.remove('isActive');
+        this.emptyTodoListEl.classList.remove('isHidden');
+        this.emptyAllTodoEl.classList.add('isHidden');
+
+        this.renderEmptyTodoListContent(false);    
+    }
 }
 
 
