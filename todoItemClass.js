@@ -1,14 +1,13 @@
 export class TodoItem {
-    constructor(dataIndex, text) {
+    constructor(dataIndex, text, todoItemArray) {
         this.dataIndex = dataIndex;
         this.text = text;
-        // this.list = list;
         this.todoItemTemplate = `
             <li class="todoItem" data-done-status="false">
-            <input class="completeItemButton" type="checkbox" onclick="onCheckBoxClick(this)">
+            <input class="completeItemButton" type="checkbox">
             <p class="todoItemText"></p>
-            <button class="removeItemButton" type="button" onclick="onRemoveBtnClick(this)">Remove</button>
-            <button class="editItemButton" type="button" onclick="onEditBtnClick(this)">Edit</button>
+            <button class="removeItemButton" type="button">Remove</button>
+            <button class="editItemButton" type="button">Edit</button>
             </li>`
         // todos lists
         this.completedTodoListEl = document.querySelector('.completedTodoList');
@@ -22,19 +21,32 @@ export class TodoItem {
         this.emptyTodoListEl = document.querySelector('.emptyTodoListContent');
         this.emptyAllTodoEl = document.querySelector('.emptyAllTodosContent');
 
-        this.todoItemArray = JSON.parse(localStorage.getItem('todos')) || [];
-
-
+        this.todoItemArray = todoItemArray;
+        this.editableTextContent = null;
         
-        this.renderTodoItem(this.incompletedTodoListEl, this.allTodoListEl);
+        this.renderTodoItem(this.dataIndex, this.text, this.incompletedTodoListEl);
+        this.renderTodoItem(this.dataIndex, this.text, this.allTodoListEl);
+
     }
 
 
-    renderTodoItem(incompletedList, allList) {
+    renderTodoItem(dataIndex, text, list) {
 
-        console.log(this)
-        this.createItem(incompletedList);
-        this.createItem(allList);
+        list.insertAdjacentHTML('afterbegin', this.todoItemTemplate);
+        
+        const todoItemTextEl = list.querySelector('.todoItemText');
+        todoItemTextEl.textContent = text;
+        const todoItemEl = list.querySelector('.todoItem');
+        todoItemEl.setAttribute('data-index', dataIndex);
+
+        const completeItemButtonEl = document.querySelector('.completeItemButton');
+        completeItemButtonEl.addEventListener('click', this.onCheckBoxClick.bind(this));
+
+        const removeItemButtonEl = document.querySelector('.removeItemButton');
+        removeItemButtonEl.addEventListener('click', this.onRemoveBtnClick.bind(this));
+
+        const editItemButtonEl = document.querySelector('.editItemButton');
+        editItemButtonEl.addEventListener('click', this.onEditBtnClick.bind(this));
 
         this.updateTodoCounter();
 
@@ -43,18 +55,7 @@ export class TodoItem {
             this.renderEmptyTodoListContent(true);
         } else {
             this.renderEmptyTodoListContent(false);
-        }
-
-        
-    }
-
-
-    createItem(list) {
-        list.insertAdjacentHTML('afterbegin', this.todoItemTemplate);
-        const todoItemTextEl = list.querySelector('.todoItemText');
-        todoItemTextEl.textContent = this.text;
-        const todoItemEl = list.querySelector('.todoItem');
-        todoItemEl.setAttribute('data-index', this.dataIndex);
+        }       
     }
 
     updateTodoCounter() {
@@ -80,15 +81,53 @@ export class TodoItem {
         } 
     }
 
-    onCheckBoxClick(e) {
-        const itemDataIndex = e.parentElement.getAttribute('data-index');
-        const todoTextContent = e.parentElement.querySelector('.todoItemText').textContent;
+    onEditBtnClick(e) {
+        [...e.target.parentElement.children].map(item => {
+            if (item.className === 'todoItemText') {
+                this.editableTextContent = item.textContent;
+                item.contentEditable = true;
+                item.classList.add('isEditable');
+                item.addEventListener('keydown', this.onTodoKeydown);
+            }
+        })
+    }
+    
 
-        console.log(this)
+    onTodoKeydown(e) {
+        console.log(e)
+    if (e.code === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const arrayFromLocalStorage = JSON.parse(localStorage.getItem('todos'));
+        localStorage.clear();
+        
+        // looks for item with edited value and sets new value
+        arrayFromLocalStorage.map(el => {
+            if (el.item === this.editableTextContent) {
+                el.item = e.currentTarget.textContent;
+            }
+        })
+
+        localStorage.setItem('todos', JSON.stringify(arrayFromLocalStorage));
+
+        e.currentTarget.contentEditable = false;
+        e.currentTarget.classList.remove('isEditable');
+    }
+}
+
+
+
+    onCheckBoxClick(e) {
+        const itemDataIndex = e.target.parentElement.getAttribute('data-index');
+        const todoTextContent = e.target.parentElement.querySelector('.todoItemText').textContent;
+
         // if checkbox is checked, item sets to completedTodoList and removes from incompletedTodoList
-        if (e.checked) {
+        if (e.target.checked) {
+            console.log(e.target.checked)
             this.changeCheckboxValue(itemDataIndex, this.incompletedTodoListEl, 'true');
 
+            
             [...this.allTodoListEl.children].map(item => {
                 if (item.getAttribute('data-index') === itemDataIndex) {
                     item.querySelector('.completeItemButton').checked = true;
@@ -103,6 +142,7 @@ export class TodoItem {
             this.renderEmptyTodoListContent(true);
             
         } else {
+            console.log(e.target.checked)
             this.changeCheckboxValue(itemDataIndex, this.completedTodoListEl, 'false');
 
             [...this.allTodoListEl.children].map(item => {
@@ -119,6 +159,33 @@ export class TodoItem {
             this.renderEmptyTodoListContent(false);    
         }
     }
+
+    onRemoveBtnClick(e) {
+        const itemDataIndex = e.target.parentElement.getAttribute('data-index');
+
+        this.removeItem(itemDataIndex);
+
+        [...document.querySelectorAll('.todoItem')].map(el => {
+            // removes item from DOM if dataIndex of item is the same as choosen item has
+            if (el.getAttribute('data-index') === itemDataIndex) {
+                this.removeFormDom(itemDataIndex, document);
+            }
+        });
+
+        this.updateTodoCounter();
+
+        // checks which todos list is active
+        if (this.completedTodoListEl.classList.contains('isHidden')) {
+            this.renderEmptyTodoListContent(true);
+        } else if (this.incompletedTodoListEl.classList.contains('isHidden')) {
+            this.renderEmptyTodoListContent(false);
+        }
+        
+        if (!this.allTodoListEl.classList.contains('isHidden')) {
+            this.renderAllTodosContent();
+        }
+    }
+    
 
     changeCheckboxValue(index, element, dataDoneStatus) {
         [...element.querySelectorAll('.todoItem')].map(el => {
@@ -156,6 +223,16 @@ export class TodoItem {
             }
         })
     }
+
+    renderAllTodosContent() {
+    // renders message for all todos list if it is active
+    if (this.todoItemArray.length === 0) {
+        this.emptyAllTodoEl.textContent = 'Todos list is empty';
+    }
+    if (this.todoItemArray.length > 0) {
+        this.emptyAllTodoEl.textContent = '';
+    }
+}
 
 }
 
