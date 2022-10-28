@@ -99,10 +99,8 @@ export class App {
                 item.addEventListener('keydown', this.onTodoKeydown.bind(this));
             }
         })
-        
-        // не змінює значення в олл
     }
-    
+
     onTodoKeydown(e) {
         if (e.code === "Enter") {
             e.preventDefault();
@@ -114,9 +112,43 @@ export class App {
             // looks for item with edited value and sets new value           
             arrayFromLocalStorage.map(el => {
                 if (el.item === this.editableTextContent) {
-                    el.item = e.currentTarget.textContent;
+                    el.item = e.currentTarget.textContent;            
                 }
             })
+
+            const activeList = e.target.parentElement.parentElement;
+            const dataIndex = e.target.parentElement.getAttribute('data-index');
+            const text = e.target.textContent;
+
+            switch (activeList.className) {
+                case 'completedTodoList':
+                    this.removeFormDom(dataIndex, this.allTodoListEl);
+                    this.renderTodoItem(dataIndex, text, this.allTodoListEl);
+                    this.allTodoListEl.children[0].children[0].checked = true;
+                    break;
+                case 'incompletedTodoList':
+                    this.removeFormDom(dataIndex, this.allTodoListEl);
+                    this.renderTodoItem(dataIndex, text, this.allTodoListEl);
+                    this.allTodoListEl.children[0].children[0].checked = false;
+                    break;
+                case 'allTodoList':
+                    [...this.incompletedTodoListEl.children].map(el => {
+                        if (el.getAttribute('data-index') === dataIndex) {
+                            this.removeFormDom(dataIndex, this.incompletedTodoListEl);
+                            this.renderTodoItem(dataIndex, text, this.incompletedTodoListEl);
+                            this.incompletedTodoListEl.children[0].children[0].checked = false;
+                        }
+                    });
+
+                    [...this.completedTodoListEl.children].map(el => {
+                        if (el.getAttribute('data-index') === dataIndex) {
+                            this.removeFormDom(dataIndex, this.completedTodoListEl);
+                            this.renderTodoItem(dataIndex, text, this.completedTodoListEl);
+                            this.completedTodoListEl.children[0].children[0].checked = true;
+                        }
+                    });
+                    break;
+            }
             
             localStorage.setItem('todos', JSON.stringify(arrayFromLocalStorage));
             
